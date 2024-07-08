@@ -2,4 +2,7 @@
 *.litematic
 *.nbt
 /dist
+/build
 /__pycache__
+*.pyc
+*.spec
