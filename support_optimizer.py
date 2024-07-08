@@ -1,9 +1,5 @@
 from litemapy import Schematic, BlockState
 
-
-schematic_name = "mere 1 - copia.litematic"
-support_block = "minecraft:cobblestone"
-
 CONCRETE_BLOCK_IDS = [
     "minecraft:white_concrete",
     "minecraft:orange_concrete",
@@ -22,7 +18,6 @@ CONCRETE_BLOCK_IDS = [
     "minecraft:red_concrete",
     "minecraft:black_concrete"
 ]
-
 CONCRETE_POWDER_IDS = [
     "minecraft:white_concrete_powder",
     "minecraft:orange_concrete_powder",
@@ -41,7 +36,6 @@ CONCRETE_POWDER_IDS = [
     "minecraft:red_concrete_powder",
     "minecraft:black_concrete_powder"
 ]
-
 SLAB_IDS = [
     "minecraft:oak_slab",
     "minecraft:spruce_slab",
@@ -100,62 +94,70 @@ SLAB_IDS = [
     "minecraft:deepslate_tile_slab",
     "minecraft:mud_brick_slab"
     ]
-try:
-    schem = Schematic.load(schematic_name)
-except FileNotFoundError:
-    print("Schematic not found.")
-    exit()
+CONCRETE_TO_POWDER = dict(zip(CONCRETE_BLOCK_IDS,CONCRETE_POWDER_IDS))
+POWDER_TO_CONCRETE = dict(zip(CONCRETE_POWDER_IDS,CONCRETE_BLOCK_IDS))
 
-reg = list(schem.regions.values())[0]
+def load_schematic_region(file_path):
+    try:
+        schem = Schematic.load(file_path)
+        reg = list(schem.regions.values())[0]
+    except FileNotFoundError:
+        print("Schematic not found.")
+        exit()
+    return reg, schem
 
 def is_slab(block_id):
     if block_id in SLAB_IDS:
         return True
 
-def replace_cobblestone_below_falling_blocks():
-    for x,y,z in reg.allblockpos():
-        if is_powder(reg.getblock(x,y,z).blockid):
-            if y > 1:
-                reg.setblock(x,y-1,z,BlockState("minecraft:jungle_leaves"))
-            else:
-                reg.setblock(x,y-1,z,BlockState("minecraft:air"))
-
 def is_powder(block_id):
-    powder_blocks = [
-        "minecraft:white_concrete_powder",
-        "minecraft:orange_concrete_powder",
-        "minecraft:magenta_concrete_powder",
-        "minecraft:light_blue_concrete_powder",
-        "minecraft:yellow_concrete_powder",
-        "minecraft:lime_concrete_powder",
-        "minecraft:pink_concrete_powder",
-        "minecraft:gray_concrete_powder",
-        "minecraft:light_gray_concrete_powder",
-        "minecraft:cyan_concrete_powder",
-        "minecraft:purple_concrete_powder",
-        "minecraft:blue_concrete_powder",
-        "minecraft:brown_concrete_powder",
-        "minecraft:green_concrete_powder",
-        "minecraft:red_concrete_powder",
-        "minecraft:black_concrete_powder",
-        "minecraft:sand"
-    ]
-    if block_id in powder_blocks:
+    if block_id in CONCRETE_POWDER_IDS:
         return True
     else:
         return False
 
-air = BlockState("minecraft:air")
+def is_concrete(block_id):
+    if block_id in CONCRETE_BLOCK_IDS:
+        return True
+    else:
+        return False
+    
+def concrete_to_powder(block_id):
+    if is_concrete(block_id):
+        return CONCRETE_TO_POWDER[block_id]
+    else:
+        return block_id
 
-for x,y,z in reg.allblockpos():
-    if reg.getblock(x,y,z).blockid == "minecraft:cobblestone":
-        if is_slab(reg.getblock(x,y+1,z).blockid):
-            reg.setblock(x,y,z,air)
+def powder_to_concrete(block_id):
+    if is_powder(block_id):
+        return POWDER_TO_CONCRETE[block_id]
+    else:
+        return block_id
 
-replace_cobblestone_below_falling_blocks()
-            
+def replace_concrete_with_powder(file_path=""):
+    reg,schem = load_schematic_region(file_path)
+    leaves = BlockState("minecraft:jungle_leaves")
+    air = BlockState("minecraft:air")
+    for x,y,z in reg.allblockpos():
+        #si es concreto reemplazar por polvo y poner hojas abajo
+        if is_concrete(reg.getblock(x,y,z).blockid):
+            replacement = BlockState(concrete_to_powder(reg.getblock(x,y,z).blockid))
+            #poner hojas solo si es mayor a 1
+            reg.setblock(x,y,z,replacement)
+            if y > 1:
+                reg.setblock(x,y-1,z,leaves)
+            else:
+                reg.setblock(x,y-1,z,air)
+    schem.save(file_path)
+    print("Concrete replaced.")
 
-schem.save(schematic_name)
-print("Slab support removed from schematic.")
-
-
+def remove_slab_supports(support_block="minecraft:cobblestone",file_path=""):
+    reg,schem = load_schematic_region(file_path)
+    air = BlockState("minecraft:air")
+    for x,y,z in reg.allblockpos():
+        if is_slab(reg.getblock(x,y,z).blockid):
+            if y > 1:
+                if reg.getblock(x,y-1,z).blockid == support_block:
+                    reg.setblock(x,y-1,z,air)
+    schem.save(file_path)
+    print("Slab supports removed.")
