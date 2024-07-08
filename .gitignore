@@ -2,3 +2,4 @@
 *.litematic
 *.nbt
 /dist
+/__pycache__
