@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 from tkinter import filedialog
 from fix_litematica_import import fix_litematica_import
 from support_optimizer import remove_slab_supports, replace_concrete_with_powder
@@ -9,7 +10,9 @@ def open_file():
     litematic_filetypes = [("Litematic files", "*.litematic")]
     path = filedialog.askopenfilename(filetypes=litematic_filetypes, title="Select file")
     if path:
-        label_archivo.config(text="Selected file:\n" + path, fg="blue")
+        file_path = os.path.basename(path)
+        file_name = os.path.splitext(file_path)[0]
+        label_archivo.config(text="Selected file:\n" + file_name, fg="blue")
 
 def fix_NBT():
     fix_litematica_import(file_path=path)  # Calls the corresponding function
